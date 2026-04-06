@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matix — Matrix Determinant Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@300;400;500;600;700&family=Outfit:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --bg-void: #06080e;
+  --bg-panel: #0b0f1a;
+  --bg-cell: #0e1322;
+  --bg-cell-hover: #131a2e;
+  --bg-cell-focus: #151d35;
+  --border-dim: #1a2240;
+  --border-glow: #2dd4bf40;
+  --border-active: #2dd4bf;
+  --cyan: #2dd4bf;
+  --cyan-dim: #2dd4bf80;
+  --cyan-glow: #2dd4bf30;
+  --indigo: #818cf8;
+  --indigo-dim: #818cf860;
+  --indigo-glow: #818cf820;
+  --magenta: #f472b6;
+  --text-primary: #e8edf5;
+  --text-secondary: #8892a8;
+  --text-dim: #4a5568;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-sans: 'DM Sans', sans-serif;
+  --font-display: 'Outfit', sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-void);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Noise texture overlay ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 128px 128px;
+}
+
+/* ── Grid lines background ── */
+.grid-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--border-dim) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border-dim) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.2;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black, transparent);
+}
+
+/* ── Main container ── */
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+/* ── Hero / Header ── */
+.hero {
+  text-align: center;
+  padding: 4rem 0 3rem;
+  position: relative;
+}
+
+.hero-glow {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 500px;
+  height: 300px;
+  background: radial-gradient(ellipse, var(--cyan-glow) 0%, var(--indigo-glow) 40%, transparent 70%);
+  filter: blur(60px);
+  pointer-events: none;
+  animation: hero-pulse 6s ease-in-out infinite alternate;
+}
+
+@keyframes hero-pulse {
+  0% { opacity: 0.5; transform: translateX(-50%) scale(1); }
+  100% { opacity: 0.8; transform: translateX(-50%) scale(1.1); }
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 1rem;
+  border: 1px solid var(--border-dim);
+  border-radius: 100px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  background: var(--bg-panel);
+  margin-bottom: 1.5rem;
+  animation: fade-down 0.6s ease-out both;
+}
+
+.hero-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan);
+  animation: blink 2s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.hero h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2.8rem, 6vw, 4.2rem);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  margin-bottom: 0.75rem;
+  animation: fade-down 0.6s ease-out 0.1s both;
+}
+
+.hero h1 .accent {
+  background: linear-gradient(135deg, var(--cyan), var(--indigo));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero p {
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+  max-width: 440px;
+  margin: 0 auto;
+  line-height: 1.6;
+  animation: fade-down 0.6s ease-out 0.2s both;
+}
+
+@keyframes fade-down {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Panel card ── */
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  overflow: hidden;
+  animation: fade-up 0.5s ease-out 0.3s both;
+}
+
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cyan-dim), var(--indigo-dim), transparent);
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-secondary);
+}
+
+.panel-header .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--cyan);
+  box-shadow: 0 0 10px var(--cyan-glow);
+}
+
+/* ── Controls ── */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.size-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.size-group label {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.size-display {
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--cyan);
+  min-width: 3.5ch;
+  text-align: center;
+  text-shadow: 0 0 20px var(--cyan-glow);
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 180px;
+  height: 4px;
+  background: var(--border-dim);
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--bg-void);
+  border: 2px solid var(--cyan);
+  box-shadow: 0 0 12px var(--cyan-glow), inset 0 0 4px var(--cyan-glow);
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 20px var(--cyan-dim), inset 0 0 6px var(--cyan-glow);
+  transform: scale(1.15);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--bg-void);
+  border: 2px solid var(--cyan);
+  box-shadow: 0 0 12px var(--cyan-glow);
+  cursor: pointer;
+}
+
+.btn {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.6rem 1.4rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-generate {
+  background: linear-gradient(135deg, var(--indigo), #6366f1);
+  color: white;
+  box-shadow: 0 4px 20px #818cf830;
+}
+
+.btn-generate:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 28px #818cf850;
+}
+
+.btn-compute {
+  background: linear-gradient(135deg, var(--cyan), #14b8a6);
+  color: var(--bg-void);
+  font-weight: 700;
+  box-shadow: 0 4px 20px var(--cyan-glow);
+}
+
+.btn-compute:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 28px var(--cyan-dim);
+}
+
+.btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.btn-random {
+  background: transparent;
+  border: 1px solid var(--border-dim);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  padding: 0.5rem 1rem;
+}
+
+.btn-random:hover {
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+/* ── Matrix Grid ── */
+.matrix-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  min-height: 60px;
+}
+
+.matrix-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+}
+
+/* Bracket decorations */
+.bracket {
+  width: 14px;
+  flex-shrink: 0;
+  align-self: stretch;
+  position: relative;
+}
+
+.bracket::before, .bracket::after {
+  content: '';
+  position: absolute;
+  background: var(--cyan);
+  border-radius: 1px;
+}
+
+.bracket-left::before {
+  top: 0; bottom: 0; left: 4px; width: 2px;
+}
+.bracket-left::after {
+  top: 0; left: 4px; width: 10px; height: 2px;
+  box-shadow: 0 calc(100% - 2px) 0 0 var(--cyan);
+  /* bottom line trick — we'll use a pseudo on the wrapper instead */
+}
+
+/* Simpler bracket approach */
+.bracket-left {
+  border-left: 2.5px solid var(--cyan);
+  border-top: 2.5px solid var(--cyan);
+  border-bottom: 2.5px solid var(--cyan);
+  border-radius: 4px 0 0 4px;
+  box-shadow: -4px 0 16px var(--cyan-glow);
+}
+
+.bracket-right {
+  border-right: 2.5px solid var(--cyan);
+  border-top: 2.5px solid var(--cyan);
+  border-bottom: 2.5px solid var(--cyan);
+  border-radius: 0 4px 4px 0;
+  box-shadow: 4px 0 16px var(--cyan-glow);
+}
+
+.matrix-grid {
+  display: inline-grid;
+  gap: 6px;
+  padding: 12px 8px;
+}
+
+.matrix-grid input {
+  width: 58px;
+  height: 50px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: var(--bg-cell);
+  border: 1px solid var(--border-dim);
+  border-radius: 8px;
+  outline: none;
+  transition: all 0.2s ease;
+  caret-color: var(--cyan);
+}
+
+.matrix-grid input::placeholder {
+  color: var(--text-dim);
+  font-weight: 300;
+}
+
+.matrix-grid input:hover {
+  background: var(--bg-cell-hover);
+  border-color: #2a3560;
+}
+
+.matrix-grid input:focus {
+  background: var(--bg-cell-focus);
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px var(--cyan-glow), 0 0 20px var(--cyan-glow);
+}
+
+.matrix-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* ── Result Area ── */
+.result-area {
+  display: none;
+  animation: result-appear 0.5s ease-out both;
+}
+
+.result-area.visible {
+  display: block;
+}
+
+@keyframes result-appear {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.result-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #0d1a2a, #0f1630);
+  border: 1px solid var(--border-glow);
+  border-radius: 14px;
+  margin-bottom: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.result-box::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, var(--cyan-glow), transparent 70%);
+  pointer-events: none;
+}
+
+.result-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-secondary);
+}
+
+.result-value {
+  font-family: var(--font-mono);
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: var(--cyan);
+  text-shadow: 0 0 30px var(--cyan-glow), 0 0 60px var(--cyan-glow);
+  animation: flicker 0.15s ease-out;
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes flicker {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  30% { opacity: 0.4; }
+  40% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+/* ── Steps ── */
+.steps-container {
+  margin-top: 1rem;
+}
+
+.steps-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: 1px solid var(--border-dim);
+  border-radius: 10px;
+  padding: 0.6rem 1.2rem;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  text-align: left;
+}
+
+.steps-toggle:hover {
+  border-color: var(--text-dim);
+  color: var(--text-primary);
+}
+
+.steps-toggle .chevron {
+  transition: transform 0.3s ease;
+  margin-left: auto;
+}
+
+.steps-toggle.open .chevron {
+  transform: rotate(180deg);
+}
+
+.steps-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s ease, opacity 0.3s ease;
+  opacity: 0;
+}
+
+.steps-content.open {
+  max-height: 2000px;
+  opacity: 1;
+  margin-top: 1rem;
+}
+
+.step {
+  padding: 1rem 1.25rem;
+  border-left: 2px solid var(--border-dim);
+  margin-left: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.88rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  transition: border-color 0.3s;
+}
+
+.step:hover {
+  border-left-color: var(--cyan-dim);
+}
+
+.step .math {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  background: var(--bg-cell);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  display: inline;
+  white-space: nowrap;
+}
+
+.step .highlight {
+  color: var(--cyan);
+  font-weight: 600;
+}
+
+.step .sign-pos { color: var(--cyan); font-weight: 600; }
+.step .sign-neg { color: var(--magenta); font-weight: 600; }
+
+.step-divider {
+  height: 1px;
+  background: var(--border-dim);
+  margin: 0.75rem 0 0.75rem 0.5rem;
+}
+
+.step-final {
+  padding: 1rem 1.25rem;
+  margin-left: 0.5rem;
+  border-left: 2px solid var(--cyan);
+  background: linear-gradient(90deg, var(--cyan-glow), transparent);
+  border-radius: 0 8px 8px 0;
+}
+
+.step-final .math {
+  font-family: var(--font-mono);
+  color: var(--cyan);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* ── Formula reference ── */
+.formula-ref {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 1.5rem;
+  border-top: 1px solid var(--border-dim);
+  margin-top: 1rem;
+  line-height: 2;
+}
+
+.formula-ref .formula {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* ── Footer ── */
+.footer {
+  text-align: center;
+  padding: 3rem 0 2rem;
+  animation: fade-up 0.5s ease-out 0.5s both;
+}
+
+.footer-line {
+  width: 40px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--cyan), var(--indigo));
+  margin: 0 auto 1.2rem;
+  border-radius: 2px;
+}
+
+.footer p {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
+.footer .name {
+  color: var(--cyan);
+  font-weight: 600;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .container { padding: 1rem; }
+  .hero { padding: 2.5rem 0 2rem; }
+  .hero h1 { font-size: 2.2rem; }
+  .panel { padding: 1.25rem; }
+  .controls { gap: 1rem; }
+  input[type="range"] { width: 140px; }
+  .matrix-grid input { width: 46px; height: 42px; font-size: 0.85rem; }
+  .matrix-grid { gap: 4px; padding: 8px 4px; }
+  .result-value { font-size: 1.8rem; }
+  .size-display { font-size: 1.1rem; }
+}
+
+@media (max-width: 420px) {
+  .matrix-grid input { width: 38px; height: 36px; font-size: 0.75rem; }
+  .bracket { width: 8px; }
+}
+
+/* ── Utility ── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  border: 0;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-void); }
+::-webkit-scrollbar-thumb { background: var(--border-dim); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<div class="grid-bg" aria-hidden="true"></div>
+
+<div class="container">
+  <!-- Hero -->
+  <header class="hero">
+    <div class="hero-glow" aria-hidden="true"></div>
+    <div class="hero-badge">
+      <span>Matrix Engine v1.0</span>
+    </div>
+    <h1>
+      <span class="accent">Matix</span> Determinant<br>Calculator
+    </h1>
+    <p>Compute matrix determinants with recursive cofactor expansion — step by step, right in your browser.</p>
+  </header>
+
+  <!-- Controls Panel -->
+  <section class="panel" id="controlPanel">
+    <div class="panel-header">
+      <span class="dot"></span>
+      Configuration
+    </div>
+    <div class="controls">
+      <div class="size-group">
+        <label for="sizeSlider">Size</label>
+        <input type="range" id="sizeSlider" min="1" max="7" value="3" step="1">
+        <span class="size-display" id="sizeDisplay">3×3</span>
+      </div>
+      <button class="btn btn-generate" id="btnGenerate" onclick="generateMatrix()">Generate</button>
+    </div>
+  </section>
+
+  <!-- Matrix Panel -->
+  <section class="panel" id="matrixPanel" style="display:none;">
+    <div class="panel-header">
+      <span class="dot"></span>
+      Matrix Input
+    </div>
+    <div class="matrix-area">
+      <div class="matrix-wrapper">
+        <div class="bracket bracket-left" aria-hidden="true"></div>
+        <div class="matrix-grid" id="matrixGrid"></div>
+        <div class="bracket bracket-right" aria-hidden="true"></div>
+      </div>
+      <div class="matrix-actions">
+        <button class="btn btn-compute" id="btnCompute" onclick="compute()">Compute Determinant</button>
+        <button class="btn btn-random" onclick="fillRandom()">Random</button>
+        <button class="btn btn-random" onclick="clearMatrix()">Clear</button>
+      </div>
+    </div>
+
+    <div class="formula-ref">
+      <span class="formula">det(A) = Σ (-1)<sup>j</sup> · a<sub>0j</sub> · det(M<sub>0j</sub>)</span><br>
+      Cofactor expansion along first row
+    </div>
+  </section>
+
+  <!-- Result Panel -->
+  <section class="panel result-area" id="resultPanel">
+    <div class="panel-header">
+      <span class="dot"></span>
+      Result
+    </div>
+
+    <div class="result-box">
+      <span class="result-label">det(A) =</span>
+      <span class="result-value" id="resultValue">0</span>
+    </div>
+
+    <div class="steps-container">
+      <button class="steps-toggle" id="stepsToggle" onclick="toggleSteps()">
+        <span>Step-by-step breakdown</span>
+        <svg class="chevron" width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="steps-content" id="stepsContent"></div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-line"></div>
+    <p>Built by <span class="name">Hasnain</span></p>
+  </footer>
+</div>
+
+<script>
+let currentSize = 3;
+
+/* ── Size slider ── */
+const slider = document.getElementById('sizeSlider');
+const sizeDisp = document.getElementById('sizeDisplay');
+
+slider.addEventListener('input', () => {
+  currentSize = parseInt(slider.value);
+  sizeDisp.textContent = `${currentSize}×${currentSize}`;
+});
+
+/* ── Generate matrix grid ── */
+function generateMatrix() {
+  currentSize = parseInt(slider.value);
+  const grid = document.getElementById('matrixGrid');
+  grid.innerHTML = '';
+  grid.style.gridTemplateColumns = `repeat(${currentSize}, 1fr)`;
+
+  for (let i = 0; i < currentSize; i++) {
+    for (let j = 0; j < currentSize; j++) {
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.inputMode = 'numeric';
+      inp.placeholder = '0';
+      inp.id = `cell-${i}-${j}`;
+      inp.setAttribute('aria-label', `Row ${i+1}, Column ${j+1}`);
+      inp.addEventListener('keydown', handleTab);
+      grid.appendChild(inp);
+    }
+  }
+
+  const panel = document.getElementById('matrixPanel');
+  panel.style.display = '';
+  panel.style.animation = 'none';
+  panel.offsetHeight; // reflow
+  panel.style.animation = 'fade-up 0.4s ease-out both';
+
+  // Hide result if shown
+  document.getElementById('resultPanel').classList.remove('visible');
+}
+
+/* Tab navigation within grid */
+function handleTab(e) {
+  if (e.key === 'Tab' || e.key === 'Enter') {
+    e.preventDefault();
+    const [, r, c] = this.id.split('-').map(Number);
+    let nr = r, nc = c + 1;
+    if (nc >= currentSize) { nc = 0; nr++; }
+    if (nr >= currentSize) { nr = 0; nc = 0; }
+    const next = document.getElementById(`cell-${nr}-${nc}`);
+    if (next) next.focus();
+  }
+}
+
+/* ── Read matrix values ── */
+function readMatrix() {
+  const m = [];
+  for (let i = 0; i < currentSize; i++) {
+    m[i] = [];
+    for (let j = 0; j < currentSize; j++) {
+      const v = document.getElementById(`cell-${i}-${j}`).value.trim();
+      m[i][j] = v === '' ? 0 : parseFloat(v);
+      if (isNaN(m[i][j])) m[i][j] = 0;
+    }
+  }
+  return m;
+}
+
+/* ── Fill with random integers ── */
+function fillRandom() {
+  for (let i = 0; i < currentSize; i++) {
+    for (let j = 0; j < currentSize; j++) {
+      const v = Math.floor(Math.random() * 19) - 9; // -9 to 9
+      document.getElementById(`cell-${i}-${j}`).value = v;
+    }
+  }
+}
+
+/* ── Clear matrix ── */
+function clearMatrix() {
+  for (let i = 0; i < currentSize; i++)
+    for (let j = 0; j < currentSize; j++)
+      document.getElementById(`cell-${i}-${j}`).value = '';
+  document.getElementById('resultPanel').classList.remove('visible');
+}
+
+/* ── Determinant with steps ── */
+function determinant(matrix, steps, depth = 0) {
+  const n = matrix.length;
+  const indent = '  '.repeat(depth);
+  const matStr = matrixToString(matrix);
+
+  if (n === 1) {
+    steps.push({ depth, text: `det([${fmt(matrix[0][0])}]) = <span class="highlight">${fmt(matrix[0][0])}</span>` });
+    return matrix[0][0];
+  }
+
+  if (n === 2) {
+    const [a, b] = matrix[0];
+    const [c, d] = matrix[1];
+    const det = a * d - b * c;
+    steps.push({
+      depth,
+      text: `det of 2×2: <span class="math">${fmt(a)}·${fmt(d)} − ${fmt(b)}·${fmt(c)}</span> = <span class="math">${fmt(a*d)} − ${fmt(b*c)}</span> = <span class="highlight">${fmt(det)}</span>`
+    });
+    return det;
+  }
+
+  steps.push({ depth, text: `Expanding ${n}×${n} matrix along first row:`, header: true });
+
+  let det = 0;
+  const terms = [];
+
+  for (let j = 0; j < n; j++) {
+    const sign = (j % 2 === 0) ? 1 : -1;
+    const signStr = sign === 1 ? '+' : '−';
+    const signClass = sign === 1 ? 'sign-pos' : 'sign-neg';
+    const coeff = matrix[0][j];
+
+    // Build minor
+    const minor = [];
+    for (let r = 1; r < n; r++) {
+      const row = [];
+      for (let c = 0; c < n; c++) {
+        if (c !== j) row.push(matrix[r][c]);
+      }
+      minor.push(row);
+    }
+
+    steps.push({
+      depth,
+      text: `<span class="${signClass}">${signStr}</span> a<sub>0${j}</sub> = <span class="math">${fmt(coeff)}</span> × det(M<sub>0${j}</sub>):`
+    });
+
+    const minorDet = determinant(minor, steps, depth + 1);
+    const termVal = sign * coeff * minorDet;
+    terms.push(termVal);
+
+    steps.push({
+      depth,
+      text: `  → <span class="${signClass}">${signStr}</span> <span class="math">${fmt(coeff)} × ${fmt(minorDet)}</span> = <span class="math">${fmt(termVal)}</span>`
+    });
+
+    det += termVal;
+  }
+
+  const termsStr = terms.map(t => fmt(t)).join(' + ');
+  steps.push({
+    depth,
+    text: `Sum: <span class="math">${termsStr}</span> = <span class="highlight">${fmt(det)}</span>`,
+    final: depth === 0
+  });
+
+  return det;
+}
+
+function fmt(n) {
+  if (Number.isInteger(n)) return n.toString();
+  return parseFloat(n.toFixed(6)).toString();
+}
+
+function matrixToString(m) {
+  return '[' + m.map(r => '[' + r.map(fmt).join(', ') + ']').join(', ') + ']';
+}
+
+/* ── Compute ── */
+function compute() {
+  const matrix = readMatrix();
+  const steps = [];
+  const det = determinant(matrix, steps, 0);
+
+  // Show result
+  const resultPanel = document.getElementById('resultPanel');
+  resultPanel.classList.remove('visible');
+  resultPanel.offsetHeight; // reflow
+  resultPanel.classList.add('visible');
+
+  const resultValue = document.getElementById('resultValue');
+  resultValue.textContent = fmt(det);
+  resultValue.style.animation = 'none';
+  resultValue.offsetHeight;
+  resultValue.style.animation = 'flicker 0.15s ease-out';
+
+  // Build steps HTML
+  const stepsHTML = steps.map(s => {
+    const marginLeft = s.depth * 1.5;
+    if (s.final) {
+      return `<div class="step-final" style="margin-left:${marginLeft}rem">${s.text}</div>`;
+    }
+    if (s.header) {
+      return `<div class="step" style="margin-left:${marginLeft}rem;color:var(--text-primary);font-weight:500">${s.text}</div>`;
+    }
+    return `<div class="step" style="margin-left:${marginLeft}rem">${s.text}</div>`;
+  }).join('');
+
+  document.getElementById('stepsContent').innerHTML = stepsHTML;
+
+  // Close steps by default
+  document.getElementById('stepsToggle').classList.remove('open');
+  document.getElementById('stepsContent').classList.remove('open');
+
+  // Scroll to result
+  resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── Toggle steps ── */
+function toggleSteps() {
+  document.getElementById('stepsToggle').classList.toggle('open');
+  document.getElementById('stepsContent').classList.toggle('open');
+}
+
+/* ── Init: auto-generate 3×3 on load ── */
+window.addEventListener('DOMContentLoaded', generateMatrix);
+</script>
+
+</body>
+</html>
