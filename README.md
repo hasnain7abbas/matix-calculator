@@ -24,7 +24,7 @@
 
 ## 🔗 Live Demo
 
-**[→ Launch Matix Calculator](https://hasnainmakada-99.github.io/matix-calculator/)**
+**[→ Launch Matix Calculator](https://hasnain7abbas.github.io/matix-calculator/)**
 
 ---
 
@@ -114,7 +114,7 @@ No build step. No install. Just open the file:
 
 ```bash
 # Clone and open
-git clone https://github.com/hasnainmakada-99/matix-calculator.git
+git clone https://github.com/hasnain7abbas/matix-calculator.git
 cd matix-calculator
 open index.html    # macOS
 start index.html   # Windows
